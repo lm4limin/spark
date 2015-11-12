@@ -351,6 +351,82 @@ class BlockMatrix @Since("1.3.0") (
       throw new SparkException("Cannot add matrices with different block dimensions")
     }
   }
+ // scalastyle:off
+//lmlimin-begin
+
+  /*    def elementAdd(eps : Double): BlockMatrix = {        
+                
+            val addedBlocks = blocks.map { case ((blockRowIndex, blockColIndex), (a)) =>
+                    
+                    if (a.isEmpty) {
+                      zero=DenseMatrix.zeros[Double](rowsPerBlock, colsPerBlock)
+                      val result = zero:+= eps    
+                        new MatrixBlock((blockRowIndex, blockColIndex), Matrices.fromBreeze(result))
+                    }  else {
+                      val result = a.toBreeze :+= eps    
+                      new MatrixBlock((blockRowIndex, blockColIndex), Matrices.fromBreeze(result))            
+                    }
+                }
+            
+                new BlockMatrix(addedBlocks, rowsPerBlock, colsPerBlock, numRows(), numCols())
+            
+    }*/
+ 
+    def elementMultiply(m2: BlockMatrix): BlockMatrix = {
+        require(numRows() == m2.numRows(), "Both matrices must have the same number of rows. " +
+            s"A.numRows: ${numRows()}, B.numRows: ${m2.numRows()}")
+        require(numCols() == m2.numCols(), "Both matrices must have the same number of columns. " +
+            s"A.numCols: ${numCols()}, B.numCols: ${m2.numCols()}")
+        if (rowsPerBlock == m2.rowsPerBlock && colsPerBlock == m2.colsPerBlock) {
+            val addedBlocks = blocks.cogroup(m2.blocks, createPartitioner())
+                .map { case ((blockRowIndex, blockColIndex), (a, b)) =>
+                    if (a.size > 1 || b.size > 1) {
+                        throw new SparkException("There are multiple MatrixBlocks with indices: " +
+                            s"($blockRowIndex, $blockColIndex). Please remove them.")
+                    }
+                    if (a.isEmpty) {
+                        new MatrixBlock((blockRowIndex, blockColIndex), b.head)
+                    } else if (b.isEmpty) {
+                        new MatrixBlock((blockRowIndex, blockColIndex), a.head)
+                    } else {
+                        val result = a.head.toBreeze :* b.head.toBreeze
+                        new MatrixBlock((blockRowIndex, blockColIndex), Matrices.fromBreeze(result))
+                    }
+                }
+                new BlockMatrix(addedBlocks, rowsPerBlock, colsPerBlock, numRows(), numCols())
+            } else {
+                throw new SparkException("Cannot add matrices with different block dimensions")
+            }
+    }
+    
+    def elementDivide(m2: BlockMatrix): BlockMatrix = {
+        require(numRows() == m2.numRows(), "Both matrices must have the same number of rows. " +
+            s"A.numRows: ${numRows()}, B.numRows: ${m2.numRows()}")
+        require(numCols() == m2.numCols(), "Both matrices must have the same number of columns. " +
+            s"A.numCols: ${numCols()}, B.numCols: ${m2.numCols()}")
+        if (rowsPerBlock == m2.rowsPerBlock && colsPerBlock == m2.colsPerBlock) {
+            val addedBlocks = blocks.cogroup(m2.blocks, createPartitioner())
+                .map { case ((blockRowIndex, blockColIndex), (a, b)) =>
+                    if (a.size > 1 || b.size > 1) {
+                        throw new SparkException("There are multiple MatrixBlocks with indices: " +
+                            s"($blockRowIndex, $blockColIndex). Please remove them.")
+                    }
+                    if (a.isEmpty) {
+                        new MatrixBlock((blockRowIndex, blockColIndex), b.head)
+                    } else if (b.isEmpty) {
+                        new MatrixBlock((blockRowIndex, blockColIndex), a.head)
+                    } else {
+                        val result = a.head.toBreeze :/ b.head.toBreeze
+                        new MatrixBlock((blockRowIndex, blockColIndex), Matrices.fromBreeze(result))
+                    }
+                }
+                new BlockMatrix(addedBlocks, rowsPerBlock, colsPerBlock, numRows(), numCols())
+            } else {
+                throw new SparkException("Cannot add matrices with different block dimensions")
+            }
+    }
+    //lmlimin-end
+  // scalastyle:on
 
   /**
    * Left multiplies this [[BlockMatrix]] to `other`, another [[BlockMatrix]]. The `colsPerBlock`
