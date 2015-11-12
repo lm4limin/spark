@@ -352,6 +352,8 @@ class BlockMatrix @Since("1.3.0") (
     }
   }
 //lmlimin-begin
+ // scalastyle:off
+
   /*    def elementAdd(eps : Double): BlockMatrix = {        
                 
             val addedBlocks = blocks.map { case ((blockRowIndex, blockColIndex), (a)) =>
@@ -374,7 +376,7 @@ class BlockMatrix @Since("1.3.0") (
         require(numRows() == m2.numRows(), "Both matrices must have the same number of rows. " +
             s"A.numRows: ${numRows()}, B.numRows: ${m2.numRows()}")
         require(numCols() == m2.numCols(), "Both matrices must have the same number of columns. " +
-            s"A.numCols: ${m1.numCols()}, B.numCols: ${m2.numCols()}")
+            s"A.numCols: ${numCols()}, B.numCols: ${m2.numCols()}")
         if (rowsPerBlock == m2.rowsPerBlock && colsPerBlock == m2.colsPerBlock) {
             val addedBlocks = blocks.cogroup(m2.blocks, createPartitioner())
                 .map { case ((blockRowIndex, blockColIndex), (a, b)) =>
@@ -423,6 +425,8 @@ class BlockMatrix @Since("1.3.0") (
                 throw new SparkException("Cannot add matrices with different block dimensions")
             }
     }
+  // scalastyle:on
+
     //lmlimin-end
   /**
    * Left multiplies this [[BlockMatrix]] to `other`, another [[BlockMatrix]]. The `colsPerBlock`
